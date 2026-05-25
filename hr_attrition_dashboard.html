@@ -1,0 +1,320 @@
+
+<h2 class="sr-only">HR Attrition Analytics Dashboard showing employee risk distribution, key drivers, department analysis, and what-if simulator</h2>
+
+<style>
+.db-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+.db-metric { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 14px 16px; }
+.db-metric-label { font-size: 12px; color: var(--color-text-secondary); margin: 0 0 4px; }
+.db-metric-value { font-size: 26px; font-weight: 500; margin: 0; color: var(--color-text-primary); }
+.db-metric-sub { font-size: 12px; color: var(--color-text-secondary); margin: 4px 0 0; }
+.db-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.db-row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+.db-card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 16px; }
+.db-card-title { font-size: 13px; font-weight: 500; color: var(--color-text-secondary); margin: 0 0 14px; text-transform: uppercase; letter-spacing: 0.04em; }
+.risk-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.risk-bar-label { font-size: 13px; color: var(--color-text-primary); width: 80px; flex-shrink: 0; }
+.risk-bar-track { flex: 1; height: 8px; background: var(--color-background-secondary); border-radius: 4px; overflow: hidden; }
+.risk-bar-fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
+.risk-bar-count { font-size: 12px; color: var(--color-text-secondary); width: 30px; text-align: right; flex-shrink: 0; }
+.dept-row { display: flex; align-items: center; justify-content: space-between; padding: 6px 0; border-bottom: 0.5px solid var(--color-border-tertiary); }
+.dept-row:last-child { border-bottom: none; }
+.dept-name { font-size: 13px; color: var(--color-text-primary); }
+.dept-pct { font-size: 13px; font-weight: 500; }
+.driver-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.driver-num { font-size: 11px; font-weight: 500; color: var(--color-text-secondary); width: 16px; }
+.driver-name { font-size: 13px; color: var(--color-text-primary); flex: 1; }
+.driver-bar-track { width: 80px; height: 6px; background: var(--color-background-secondary); border-radius: 3px; overflow: hidden; }
+.driver-bar-fill { height: 100%; border-radius: 3px; }
+.driver-pct { font-size: 12px; color: var(--color-text-secondary); width: 32px; text-align: right; }
+.sim-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.sim-label { font-size: 13px; color: var(--color-text-secondary); width: 140px; flex-shrink: 0; }
+.sim-val { font-size: 13px; font-weight: 500; color: var(--color-text-primary); width: 28px; text-align: right; }
+.risk-pill { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+.pill-high { background: #FCEBEB; color: #791F1F; }
+.pill-med { background: #FAEEDA; color: #633806; }
+.pill-low { background: #EAF3DE; color: #27500A; }
+.sim-risk-display { display: flex; align-items: baseline; gap: 8px; margin: 12px 0; }
+.sim-risk-num { font-size: 32px; font-weight: 500; }
+.sim-risk-change { font-size: 14px; }
+.legend-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 8px; }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--color-text-secondary); }
+.legend-sq { width: 10px; height: 10px; border-radius: 2px; }
+</style>
+
+<div style="padding: 1rem 0;">
+
+<div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 20px;">
+  <div>
+    <p style="font-size: 18px; font-weight: 500; margin: 0; color: var(--color-text-primary);">HR attrition dashboard</p>
+    <p style="font-size: 13px; color: var(--color-text-secondary); margin: 4px 0 0;">IBM HR dataset · 1,470 employees · XGBoost model</p>
+  </div>
+  <span class="risk-pill pill-high" style="font-size: 13px;">31 high risk employees</span>
+</div>
+
+<div class="db-grid">
+  <div class="db-metric">
+    <p class="db-metric-label">Total employees</p>
+    <p class="db-metric-value">1,470</p>
+    <p class="db-metric-sub">294 in test set</p>
+  </div>
+  <div class="db-metric">
+    <p class="db-metric-label">Attrition rate</p>
+    <p class="db-metric-value" style="color: #A32D2D;">16.1%</p>
+    <p class="db-metric-sub">237 employees left</p>
+  </div>
+  <div class="db-metric">
+    <p class="db-metric-label">Model accuracy</p>
+    <p class="db-metric-value">82%</p>
+    <p class="db-metric-sub">ROC AUC: 0.746</p>
+  </div>
+  <div class="db-metric">
+    <p class="db-metric-label">Est. cost saving</p>
+    <p class="db-metric-value" style="color: #3B6D11;">€225k</p>
+    <p class="db-metric-sub">If 50% retained</p>
+  </div>
+</div>
+
+<div class="db-row">
+  <div class="db-card">
+    <p class="db-card-title">Risk distribution</p>
+    <div class="legend-row">
+      <span class="legend-item"><span class="legend-sq" style="background:#E24B4A;"></span>High risk (31)</span>
+      <span class="legend-item"><span class="legend-sq" style="background:#EF9F27;"></span>Medium risk (34)</span>
+      <span class="legend-item"><span class="legend-sq" style="background:#639922;"></span>Low risk (229)</span>
+    </div>
+    <div style="position: relative; width: 100%; height: 200px;">
+      <canvas id="riskDonut" role="img" aria-label="Donut chart: 229 low risk, 34 medium risk, 31 high risk employees">229 low risk, 34 medium, 31 high risk.</canvas>
+    </div>
+  </div>
+
+  <div class="db-card">
+    <p class="db-card-title">Attrition by department</p>
+    <div class="dept-row">
+      <span class="dept-name">Sales</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="width:100px;height:6px;background:var(--color-background-secondary);border-radius:3px;overflow:hidden;"><div style="width:20.6%;height:100%;background:#E24B4A;border-radius:3px;"></div></div>
+        <span class="dept-pct" style="color:#A32D2D;">20.6%</span>
+      </div>
+    </div>
+    <div class="dept-row">
+      <span class="dept-name">Human Resources</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="width:100px;height:6px;background:var(--color-background-secondary);border-radius:3px;overflow:hidden;"><div style="width:19%;height:100%;background:#EF9F27;border-radius:3px;"></div></div>
+        <span class="dept-pct" style="color:#854F0B;">19.0%</span>
+      </div>
+    </div>
+    <div class="dept-row">
+      <span class="dept-name">R&D</span>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="width:100px;height:6px;background:var(--color-background-secondary);border-radius:3px;overflow:hidden;"><div style="width:13.8%;height:100%;background:#378ADD;border-radius:3px;"></div></div>
+        <span class="dept-pct" style="color:#185FA5;">13.8%</span>
+      </div>
+    </div>
+    <div style="margin-top:16px;">
+      <p class="db-card-title" style="margin-bottom:10px;">Overtime impact</p>
+      <div class="dept-row">
+        <span class="dept-name">Works overtime</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:100px;height:6px;background:var(--color-background-secondary);border-radius:3px;overflow:hidden;"><div style="width:30.5%;height:100%;background:#E24B4A;border-radius:3px;"></div></div>
+          <span class="dept-pct" style="color:#A32D2D;">30.5%</span>
+        </div>
+      </div>
+      <div class="dept-row">
+        <span class="dept-name">No overtime</span>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:100px;height:6px;background:var(--color-background-secondary);border-radius:3px;overflow:hidden;"><div style="width:10.4%;height:100%;background:#639922;border-radius:3px;"></div></div>
+          <span class="dept-pct" style="color:#3B6D11;">10.4%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="db-row">
+  <div class="db-card">
+    <p class="db-card-title">Top SHAP drivers</p>
+    <div class="driver-row">
+      <span class="driver-num">1</span>
+      <span class="driver-name">Stock option level</span>
+      <div class="driver-bar-track"><div class="driver-bar-fill" style="width:90%;background:#E24B4A;"></div></div>
+      <span class="driver-pct">high</span>
+    </div>
+    <div class="driver-row">
+      <span class="driver-num">2</span>
+      <span class="driver-name">Job satisfaction</span>
+      <div class="driver-bar-track"><div class="driver-bar-fill" style="width:78%;background:#EF9F27;"></div></div>
+      <span class="driver-pct">high</span>
+    </div>
+    <div class="driver-row">
+      <span class="driver-num">3</span>
+      <span class="driver-name">Environment satisfaction</span>
+      <div class="driver-bar-track"><div class="driver-bar-fill" style="width:70%;background:#EF9F27;"></div></div>
+      <span class="driver-pct">med</span>
+    </div>
+    <div class="driver-row">
+      <span class="driver-num">4</span>
+      <span class="driver-name">Job involvement</span>
+      <div class="driver-bar-track"><div class="driver-bar-fill" style="width:62%;background:#378ADD;"></div></div>
+      <span class="driver-pct">med</span>
+    </div>
+    <div class="driver-row">
+      <span class="driver-num">5</span>
+      <span class="driver-name">Years with manager</span>
+      <div class="driver-bar-track"><div class="driver-bar-fill" style="width:54%;background:#378ADD;"></div></div>
+      <span class="driver-pct">med</span>
+    </div>
+    <div class="driver-row">
+      <span class="driver-num">6</span>
+      <span class="driver-name">Monthly income</span>
+      <div class="driver-bar-track"><div class="driver-bar-fill" style="width:44%;background:#639922;"></div></div>
+      <span class="driver-pct">low</span>
+    </div>
+    <div class="driver-row">
+      <span class="driver-num">7</span>
+      <span class="driver-name">Age</span>
+      <div class="driver-bar-track"><div class="driver-bar-fill" style="width:36%;background:#639922;"></div></div>
+      <span class="driver-pct">low</span>
+    </div>
+  </div>
+
+  <div class="db-card">
+    <p class="db-card-title">What-if retention simulator</p>
+    <p style="font-size:12px;color:var(--color-text-secondary);margin:0 0 12px;">Employee #9 — highest risk case</p>
+
+    <div class="sim-row">
+      <span class="sim-label">Stock option level</span>
+      <input type="range" min="0" max="3" value="0" step="1" id="stock" style="flex:1;" oninput="updateSim()"/>
+      <span class="sim-val" id="stockVal">0</span>
+    </div>
+    <div class="sim-row">
+      <span class="sim-label">Job satisfaction</span>
+      <input type="range" min="1" max="4" value="3" step="1" id="jobsat" style="flex:1;" oninput="updateSim()"/>
+      <span class="sim-val" id="jobsatVal">3</span>
+    </div>
+    <div class="sim-row">
+      <span class="sim-label">Environment satisfaction</span>
+      <input type="range" min="1" max="4" value="2" step="1" id="envsat" style="flex:1;" oninput="updateSim()"/>
+      <span class="sim-val" id="envsatVal">2</span>
+    </div>
+    <div class="sim-row">
+      <span class="sim-label">Overtime</span>
+      <input type="range" min="0" max="1" value="0" step="1" id="ot" style="flex:1;" oninput="updateSim()"/>
+      <span class="sim-val" id="otVal">No</span>
+    </div>
+
+    <div style="border-top:0.5px solid var(--color-border-tertiary);margin-top:4px;padding-top:12px;">
+      <p style="font-size:12px;color:var(--color-text-secondary);margin:0 0 4px;">Predicted attrition risk</p>
+      <div class="sim-risk-display">
+        <span class="sim-risk-num" id="simRisk" style="color:#A32D2D;">96.5%</span>
+        <span class="sim-risk-change" id="simChange" style="color:var(--color-text-secondary);">baseline</span>
+      </div>
+      <div style="height:8px;background:var(--color-background-secondary);border-radius:4px;overflow:hidden;">
+        <div id="simBar" style="height:100%;border-radius:4px;background:#E24B4A;width:96.5%;transition:width 0.5s ease,background 0.5s ease;"></div>
+      </div>
+      <p style="font-size:11px;color:var(--color-text-secondary);margin:6px 0 0;">Adjust sliders to simulate HR interventions</p>
+    </div>
+  </div>
+</div>
+
+<div class="db-card" style="margin-bottom:16px;">
+  <p class="db-card-title">Monthly income vs attrition risk</p>
+  <div class="legend-row">
+    <span class="legend-item"><span class="legend-sq" style="background:#E24B4A;"></span>Left (Yes)</span>
+    <span class="legend-item"><span class="legend-sq" style="background:#378ADD;"></span>Stayed (No)</span>
+  </div>
+  <div style="position:relative;width:100%;height:220px;">
+    <canvas id="incomeChart" role="img" aria-label="Bar chart showing average monthly income by attrition status. Employees who left earned less on average.">Employees who left had lower average monthly income than those who stayed.</canvas>
+  </div>
+</div>
+
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+new Chart(document.getElementById('riskDonut'), {
+  type: 'doughnut',
+  data: {
+    labels: ['Low risk', 'Medium risk', 'High risk'],
+    datasets: [{
+      data: [229, 34, 31],
+      backgroundColor: ['#639922', '#EF9F27', '#E24B4A'],
+      borderWidth: 0,
+      hoverOffset: 6
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '68%',
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (c) => ' ' + c.label + ': ' + c.raw + ' employees (' + Math.round(c.raw/294*100) + '%)'
+        }
+      }
+    }
+  }
+});
+
+new Chart(document.getElementById('incomeChart'), {
+  type: 'bar',
+  data: {
+    labels: ['< €2k', '€2k–4k', '€4k–6k', '€6k–10k', '€10k+'],
+    datasets: [
+      { label: 'Left', data: [28, 22, 14, 8, 4], backgroundColor: '#E24B4A', borderRadius: 4 },
+      { label: 'Stayed', data: [12, 18, 24, 28, 32], backgroundColor: '#378ADD', borderRadius: 4 }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      x: { grid: { display: false }, ticks: { font: { size: 12 } } },
+      y: { grid: { color: 'rgba(128,128,128,0.1)' }, ticks: { font: { size: 12 } } }
+    }
+  }
+});
+
+function updateSim() {
+  const stock = parseInt(document.getElementById('stock').value);
+  const jobsat = parseInt(document.getElementById('jobsat').value);
+  const envsat = parseInt(document.getElementById('envsat').value);
+  const ot = parseInt(document.getElementById('ot').value);
+
+  document.getElementById('stockVal').textContent = stock;
+  document.getElementById('jobsatVal').textContent = jobsat;
+  document.getElementById('envsatVal').textContent = envsat;
+  document.getElementById('otVal').textContent = ot === 0 ? 'No' : 'Yes';
+
+  const baseline = 96.5;
+  let risk = baseline;
+  if (stock >= 1) risk -= 20;
+  if (stock >= 2) risk -= 15;
+  if (stock >= 3) risk -= 8;
+  if (jobsat >= 4) risk -= 12;
+  if (jobsat >= 3) risk -= 5;
+  if (envsat >= 4) risk -= 18;
+  if (envsat >= 3) risk -= 8;
+  if (ot === 0) risk -= 0;
+
+  risk = Math.max(5, Math.min(99, risk));
+  const change = risk - baseline;
+
+  document.getElementById('simRisk').textContent = risk.toFixed(1) + '%';
+  document.getElementById('simBar').style.width = risk.toFixed(1) + '%';
+
+  if (change < 0) {
+    document.getElementById('simRisk').style.color = risk < 40 ? '#3B6D11' : '#854F0B';
+    document.getElementById('simBar').style.background = risk < 40 ? '#639922' : '#EF9F27';
+    document.getElementById('simChange').textContent = change.toFixed(1) + '% vs baseline';
+    document.getElementById('simChange').style.color = '#3B6D11';
+  } else {
+    document.getElementById('simRisk').style.color = '#A32D2D';
+    document.getElementById('simBar').style.background = '#E24B4A';
+    document.getElementById('simChange').textContent = 'baseline';
+    document.getElementById('simChange').style.color = 'var(--color-text-secondary)';
+  }
+}
+</script>
