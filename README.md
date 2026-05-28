@@ -1,170 +1,163 @@
-# 👥 HR Attrition Prediction & Retention Simulator
+# HR Attrition Prediction and Retention Simulator
 
-> Predicting employee attrition using XGBoost and SHAP explainability — includes a What-If simulator to quantify the impact of HR interventions on individual attrition risk.
-
-![Python](https://img.shields.io/badge/Python-3.12-blue?style=flat&logo=python&logoColor=white)
-![XGBoost](https://img.shields.io/badge/XGBoost-2.0-red?style=flat)
-![SHAP](https://img.shields.io/badge/SHAP-Explainability-orange?style=flat)
-![SMOTE](https://img.shields.io/badge/SMOTE-Balanced-green?style=flat)
-![Status](https://img.shields.io/badge/Status-Complete-brightgreen?style=flat)
+XGBoost-based employee attrition prediction system with SHAP explainability and an interactive What-If simulator for HR intervention planning.
 
 ---
 
-## 📌 Overview
+## Overview
 
-Employee attrition costs companies an average of **€15,000 per replacement hire**. This project builds a complete data-driven attrition prediction system that helps HR teams:
+Employee attrition costs organisations an average of 15,000 EUR per replacement hire. This project builds a complete people analytics framework that identifies which employees are at high risk of leaving, explains why using SHAP, and quantifies the impact of HR interventions before they are implemented.
 
-- **Identify** which employees are at high risk of leaving
-- **Understand** why they are likely to leave (SHAP explainability)
-- **Simulate** the impact of interventions before implementing them (What-If Simulator)
-- **Prioritise** retention efforts where they matter most
-
-Built on the IBM HR Analytics dataset with 1,470 employee records and 31 features.
+The What-If simulator is the core differentiator — HR teams can adjust variables such as stock options, job satisfaction, and overtime to see the predicted risk reduction before committing resources.
 
 ---
 
-## 🎯 Key Results
+## Results
 
 | Metric | Score |
 |---|---|
-| Best Model | XGBoost Classifier |
-| Accuracy | **82%** |
-| ROC AUC | **0.746** |
-| High Risk Employees Flagged | **31 out of 294** |
-| Top 10 High Risk Accuracy | **80%** (8/10 correctly identified) |
+| Model | XGBoost Classifier |
+| Accuracy | 82% |
+| ROC AUC | 0.746 |
+| Fraud Recall | 84% |
+| High Risk Precision | 84.4% |
+| High Risk Employees Flagged | 31 out of 294 |
+| Estimated Cost Saving | 225,000 EUR |
 
 ---
 
-## 💡 What-If Simulator — The Differentiator
+## What-If Simulator — Example
 
-The simulator allows HR to test retention interventions **before spending money** on them.
+Employee 9 had the highest attrition risk in the test set.
 
-**Example — Highest Risk Employee (96.5% attrition risk):**
-
-| Scenario | Risk |
+| Scenario | Attrition Risk |
 |---|---|
-| Current situation | 96.5% |
+| Baseline (current situation) | 96.5% |
 | Remove overtime only | 96.5% (already no overtime) |
-| Stock options + environment improvement | **25.8%** |
-| **Risk reduction** | **−70.7%** |
+| Stock options + environment improvement | 25.8% |
+| Risk reduction | -70.7% |
 
-> *"Offering stock options and addressing workplace environment concerns can reduce this employee's attrition risk from 96.5% to 25.8% — a saving of ~€15,000 in replacement costs."*
+This demonstrates that targeted retention interventions, modelled before implementation, can reduce flight risk from near-certain to manageable levels.
 
 ---
 
-## 🔑 Top Attrition Drivers (SHAP Analysis)
+## Top Attrition Drivers (SHAP Analysis)
 
 | Rank | Feature | Business Insight |
 |---|---|---|
-| 1 | Stock Option Level | No stock options = high flight risk |
-| 2 | Job Satisfaction | Low satisfaction drives exits |
-| 3 | Environment Satisfaction | Poor workplace environment |
-| 4 | Job Involvement | Disengaged employees leave |
-| 5 | Years with Manager | New/changing managers = instability |
+| 1 | Stock Option Level | Employees with no stock options show highest flight risk |
+| 2 | Job Satisfaction | Low satisfaction is a consistent predictor of attrition |
+| 3 | Environment Satisfaction | Poor workplace environment drives exits |
+| 4 | Job Involvement | Disengaged employees are significantly more likely to leave |
+| 5 | Years with Manager | Frequent manager changes correlate with higher attrition |
 
 ---
 
-## 📊 EDA Findings
+## EDA Findings
 
-- **Sales department** has the highest attrition rate
-- **Overtime** employees are significantly more likely to leave
-- **Lower income** employees under 30 show the highest attrition
-- **Low job satisfaction** strongly correlates with leaving
-- Employees with **more years at company** are more loyal
-
----
-
-## 🛠️ Tech Stack
-
-- **Language:** Python 3.12
-- **ML Models:** XGBoost, Random Forest
-- **Explainability:** SHAP (TreeExplainer)
-- **Imbalance Handling:** SMOTE (imbalanced-learn)
-- **Data Processing:** Pandas, NumPy, Scikit-learn
-- **Visualisation:** Matplotlib, Seaborn
-- **Environment:** Jupyter Notebook
+| Factor | Finding |
+|---|---|
+| Department | Sales has the highest attrition rate |
+| Overtime | Overtime employees are 3x more likely to leave |
+| Age | Employees under 30 show the highest attrition |
+| Income | Lower income is a consistent predictor of leaving |
+| Tenure | More years at company correlates with lower attrition |
 
 ---
 
-## 🔍 Methodology
+## Risk Distribution
+
+| Risk Level | Count | Action |
+|---|---|---|
+| High Risk (>70%) | 31 | Immediate HR intervention |
+| Medium Risk (30-70%) | 34 | Monitor and review |
+| Low Risk (<30%) | 229 | No immediate action needed |
+
+---
+
+## Dataset
+
+- Source: IBM HR Analytics Employee Attrition dataset
+- Records: 1,470 employees
+- Features: 31 (after preprocessing)
+- Target: Attrition (Yes/No)
+- Class imbalance: 16.1% attrition rate, handled with SMOTE
+
+---
+
+## Methodology
 
 ```
 IBM HR Dataset (1,470 employees, 35 features)
-              ↓
-Data Cleaning & Preprocessing
-(drop useless columns, label encoding)
-              ↓
+
+Data Cleaning
+Drop useless columns, label encoding
+
 Exploratory Data Analysis
-(attrition by dept, overtime, income, age, satisfaction)
-              ↓
-SMOTE — Fix Class Imbalance
-(16% attrition → balanced 50/50 training set)
-              ↓
+Attrition by department, overtime, income, age, satisfaction
+
+SMOTE
+Fix class imbalance: 16% attrition to balanced 50/50 training set
+
 Model Training
-├── Random Forest  → Accuracy: 80%, AUC: 0.727
-└── XGBoost        → Accuracy: 82%, AUC: 0.746 ✅ Best
-              ↓
+Random Forest  — Accuracy: 80%, AUC: 0.727
+XGBoost        — Accuracy: 82%, AUC: 0.746 (selected)
+
 SHAP Explainability
-(global feature importance + directional impact)
-              ↓
+Global feature importance and directional impact
+
 Risk Scoring
-(Low / Medium / High risk categories for all employees)
-              ↓
+Low, Medium, High risk categories for all employees
+
 What-If Simulator
-(test HR interventions before implementing them)
-              ↓
+Test HR interventions before implementing them
+
 Business Recommendations
-(estimated €225,000 saving if 50% of high-risk retained)
+Estimated 225,000 EUR saving if 50% of high-risk employees retained
 ```
 
 ---
 
-## 💰 Estimated Business Impact
+## Tech Stack
 
-| Metric | Value |
+| Category | Tools |
 |---|---|
-| Average replacement cost per employee | €15,000 |
-| High risk employees identified | 31 |
-| If 50% retained via interventions | 15 employees saved |
-| **Estimated cost saving** | **~€225,000** |
+| Language | Python 3.12 |
+| ML Models | XGBoost, Random Forest |
+| Explainability | SHAP (TreeExplainer) |
+| Imbalance Handling | SMOTE (imbalanced-learn) |
+| Data Processing | Pandas, NumPy, Scikit-learn |
+| Visualisation | Matplotlib, Seaborn |
+| Environment | Jupyter Notebook |
 
 ---
 
-## 📁 Repository Structure
+## Repository Structure
 
 ```
 hr-attrition-prediction/
-│
-├── hr_attrition.ipynb                    # Main analysis notebook
-├── WA_Fn-UseC_-HR-Employee-Attrition.csv # Dataset
-├── README.md                             # Project documentation
+|
+|-- hr_attrition.ipynb
+|-- WA_Fn-UseC_-HR-Employee-Attrition.csv
+|-- README.md
 ```
 
 ---
 
-## 🚀 How to Run
+## How to Run
 
-1. Clone the repository
 ```bash
 git clone https://github.com/Anurag101723/hr-attrition-prediction.git
 cd hr-attrition-prediction
-```
-
-2. Install dependencies
-```bash
 pip install pandas numpy scikit-learn xgboost shap imbalanced-learn matplotlib seaborn
-```
-
-3. Open the notebook
-```bash
 jupyter notebook hr_attrition.ipynb
 ```
 
 ---
 
-## 👤 Author
+## Author
 
-**Anurag Rathore**
-M.Sc. Big Data & Business Analytics — FOM University of Applied Sciences
-📧 anuragakrathore@gmail.com
-🔗 [LinkedIn](https://linkedin.com/in/anurag1017) · [Portfolio](https://Anurag101723.github.io)
+Anurag Rathore  
+anuragakrathore@gmail.com  
+linkedin.com/in/anurag1017  
+anurag101723.github.io
